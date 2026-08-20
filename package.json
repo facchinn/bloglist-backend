@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test node --test",
+    "test": "cross-env NODE_ENV=test node --test --test-concurrency=1",
     "start": "node index.js",
     "dev": "cross-env NODE_ENV=development nodemon index.js"
   },
@@ -20,12 +20,15 @@
   },
   "homepage": "https://github.com/facchinn/bloglist-backend#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mongoose": "^9.9.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "cross-env": "^10.1.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.1.4"
   }
 }
