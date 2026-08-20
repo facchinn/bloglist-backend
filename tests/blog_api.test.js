@@ -1,5 +1,6 @@
 const { test, after, beforeEach, describe } = require('node:test')
 const assert = require('node:assert')
+const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
 
@@ -9,6 +10,9 @@ const User = require('../models/user')
 const helper = require('./test_helper')
 
 const api = supertest(app)
+
+let token
+let testUserId
 
 describe('when there are initially some blogs saved', () => {
   beforeEach(async () => {
@@ -20,6 +24,12 @@ describe('when there are initially some blogs saved', () => {
       name: 'Blog User',
       passwordHash: 'hash',
     })
+
+    testUserId = user._id.toString()
+    token = jwt.sign(
+      { username: user.username, id: user._id },
+      process.env.SECRET
+    )
 
     const blogs = await Blog.insertMany(
       helper.initialBlogs.map((blog) => ({
@@ -72,11 +82,14 @@ describe('when there are initially some blogs saved', () => {
       likes: 4,
     }
 
-    await api
+    const response = await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
+
+    assert.strictEqual(response.body.user, testUserId)
 
     const blogsAtEnd = await helper.blogsInDb()
 
@@ -93,6 +106,7 @@ describe('when there are initially some blogs saved', () => {
 
     const response = await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
 
@@ -108,6 +122,7 @@ describe('when there are initially some blogs saved', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(400)
 
@@ -124,6 +139,7 @@ describe('when there are initially some blogs saved', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(400)
 
