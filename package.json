@@ -6,7 +6,8 @@
   "scripts": {
     "test": "cross-env NODE_ENV=test node --test --test-concurrency=1",
     "start": "node index.js",
-    "dev": "cross-env NODE_ENV=development nodemon index.js"
+    "dev": "cross-env NODE_ENV=development nodemon index.js",
+    "start:test": "cross-env NODE_ENV=test nodemon index.js"
   },
   "repository": {
     "type": "git",
