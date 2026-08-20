@@ -147,18 +147,55 @@ describe('when there are initially some blogs saved', () => {
     assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
   })
 
-  test('a blog can be deleted', async () => {
+  test('a blog can be deleted by its creator', async () => {
     const blogsAtStart = await helper.blogsInDb()
     const blogToDelete = blogsAtStart[0]
 
     await api
       .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(204)
 
     const blogsAtEnd = await helper.blogsInDb()
 
     assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1)
     assert(!blogsAtEnd.map((blog) => blog.id).includes(blogToDelete.id))
+  })
+
+  test('a blog cannot be deleted without a token', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(401)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
+  })
+
+  test('a blog cannot be deleted by another user', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    const otherUser = await User.create({
+      username: 'otheruser',
+      name: 'Other User',
+      passwordHash: 'hash',
+    })
+
+    const otherToken = jwt.sign(
+      { username: otherUser.username, id: otherUser._id },
+      process.env.SECRET
+    )
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
   })
 
   test('a blog likes can be updated', async () => {
