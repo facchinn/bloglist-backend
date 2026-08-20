@@ -97,6 +97,25 @@ describe('when there are initially some blogs saved', () => {
     assert(blogsAtEnd.map((blog) => blog.title).includes(newBlog.title))
   })
 
+  test('adding a blog fails with status 401 if token is not provided', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+
+    const newBlog = {
+      title: 'Blog without token',
+      author: 'Test User',
+      url: 'https://example.com/no-token',
+      likes: 1,
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(401)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    assert.strictEqual(blogsAtEnd.length, blogsAtStart.length)
+  })
+
   test('likes defaults to zero if it is missing', async () => {
     const newBlog = {
       title: 'Blog without likes',
