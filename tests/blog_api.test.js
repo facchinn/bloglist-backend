@@ -5,6 +5,7 @@ const supertest = require('supertest')
 
 const app = require('../app')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const helper = require('./test_helper')
 
 const api = supertest(app)
@@ -12,7 +13,23 @@ const api = supertest(app)
 describe('when there are initially some blogs saved', () => {
   beforeEach(async () => {
     await Blog.deleteMany({})
-    await Blog.insertMany(helper.initialBlogs)
+    await User.deleteMany({})
+
+    const user = await User.create({
+      username: 'bloguser',
+      name: 'Blog User',
+      passwordHash: 'hash',
+    })
+
+    const blogs = await Blog.insertMany(
+      helper.initialBlogs.map((blog) => ({
+        ...blog,
+        user: user._id,
+      }))
+    )
+
+    user.blogs = blogs.map((blog) => blog._id)
+    await user.save()
   })
 
   test('blogs are returned as json and correct amount is returned', async () => {
@@ -31,6 +48,20 @@ describe('when there are initially some blogs saved', () => {
       assert(blog.id)
       assert.strictEqual(blog._id, undefined)
     })
+  })
+
+  test('blogs include creator information', async () => {
+    const response = await api.get('/api/blogs').expect(200)
+
+    assert.strictEqual(response.body[0].user.username, 'bloguser')
+    assert.strictEqual(response.body[0].user.name, 'Blog User')
+  })
+
+  test('users include their created blogs', async () => {
+    const response = await api.get('/api/users').expect(200)
+
+    assert.strictEqual(response.body[0].blogs.length, helper.initialBlogs.length)
+    assert(response.body[0].blogs[0].title)
   })
 
   test('a valid blog can be added', async () => {
