@@ -99,6 +99,45 @@ describe('when there are initially some blogs saved', () => {
     const blogsAtEnd = await helper.blogsInDb()
     assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
   })
+
+  test('a blog can be deleted', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(204)
+
+    const blogsAtEnd = await helper.blogsInDb()
+
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1)
+    assert(!blogsAtEnd.map((blog) => blog.id).includes(blogToDelete.id))
+  })
+
+  test('a blog likes can be updated', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToUpdate = blogsAtStart[0]
+
+    const updatedBlog = {
+      title: blogToUpdate.title,
+      author: blogToUpdate.author,
+      url: blogToUpdate.url,
+      likes: 99,
+    }
+
+    const response = await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updatedBlog)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    assert.strictEqual(response.body.likes, 99)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    const blogAfterUpdate = blogsAtEnd.find((blog) => blog.id === blogToUpdate.id)
+
+    assert.strictEqual(blogAfterUpdate.likes, 99)
+  })
 })
 
 after(async () => {
